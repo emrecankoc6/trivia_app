@@ -101,6 +101,18 @@ class FirestoreService {
     }
   }
 
+  Future<void> updateEarnings(String userId, int prize) async {
+    final userRef = _firestore.collection('users').doc(userId);
+    final userData = await userRef.get();
+
+    if (userData.exists) {
+      final currentEarnings = userData['totalEarnings'] ?? 0;
+      await userRef.update({
+        'totalEarnings': currentEarnings + prize,
+      });
+    }
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> getLeaderboard() {
     return _firestore
         .collection('users')

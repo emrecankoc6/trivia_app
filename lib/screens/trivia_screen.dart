@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class TriviaScreen extends StatelessWidget {
   final FirestoreService _firestoreService = FirestoreService();
+  final TextEditingController _answerController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +101,7 @@ class TriviaScreen extends StatelessWidget {
 
                       // Answer Section
                       TextField(
+                        controller: _answerController,
                         decoration: InputDecoration(
                           labelText: 'Your Answer',
                           border: OutlineInputBorder(
@@ -109,8 +111,35 @@ class TriviaScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       FilledButton(
-                        onPressed: () {
-                          // Submit answer logic
+                        onPressed: () async {
+                          final userId = FirebaseAuth.instance.currentUser!.uid;
+                          final answer = _answerController.text.trim();
+                          final questionId = question.id;
+
+                          if (answer.isEmpty) return;
+
+                          try {
+                            final isCorrect = await _firestoreService
+                                .checkAnswer(questionId, answer);
+
+                            if (isCorrect) {
+                              await _firestoreService.updateEarnings(
+                                  userId, prizePool);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        '🎉 Correct! Prize added to your earnings.')),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('❌ Incorrect.')),
+                              );
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: colorScheme.primary,
