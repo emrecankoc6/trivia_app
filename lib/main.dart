@@ -18,7 +18,11 @@ class TriviaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Trivia App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        typography: Typography.material2021(),
+      ),
       initialRoute: '/login', // Start at the Login screen
       routes: {
         '/login': (context) => const LoginScreen(),
@@ -42,74 +46,45 @@ class _LoginScreenState extends State<LoginScreen> {
   final _nameController = TextEditingController();
   final FirestoreService _firestoreService = FirestoreService();
 
-  Future<void> _login() async {
+  Future<void> _handleAuth({required bool isRegister}) async {
     try {
-      final email = _emailController.text;
-      final password = _passwordController.text;
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+      final name = _nameController.text.trim();
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      if (email.isEmpty || password.isEmpty || (isRegister && name.isEmpty)) {
+        _showSnackBar('Please fill out all fields.');
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login successful!')),
-      );
+      if (isRegister) {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        await _firestoreService.registerUser(email, password, name);
+      } else {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      }
 
-      // Navigate to the trivia screen
       Navigator.of(context).pushReplacementNamed('/trivia');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    }
-  }
-
-  Future<void> _register() async {
-    try {
-      final email = _emailController.text;
-      final password = _passwordController.text;
-      final name = _nameController.text;
-
-      if (email.isNotEmpty && password.isNotEmpty && name.isNotEmpty) {
-        await _firestoreService.registerUser(email, password, name);
-
-        final userId = FirebaseAuth.instance.currentUser!.uid;
-        await _firestoreService.initializeUser(userId);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful!')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill out all fields')),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'email-already-in-use') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('The email is already registered. Please log in.')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _showSnackBar('Error: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Light background color
+      backgroundColor: colorScheme.surfaceVariant,
       appBar: AppBar(
         title: const Text('Login'),
-        backgroundColor: const Color(0xFF007BFF), // Blue theme
+        backgroundColor: colorScheme.primaryContainer,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -117,17 +92,14 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Welcome!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.displaySmall,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Log in to continue to the Trivia App',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 32),
               _buildTextField('Email', _emailController),
@@ -137,48 +109,25 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               _buildTextField('Name', _nameController),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007BFF),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Center(child: Text('Login')),
+              FilledButton(
+                onPressed: () => _handleAuth(isRegister: false),
+                child: const Text('Login'),
               ),
               const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () async {
-                  final email = _emailController.text;
-                  final password = _passwordController.text;
-                  final name = _nameController.text;
-
-                  if (email.isNotEmpty &&
-                      password.isNotEmpty &&
-                      name.isNotEmpty) {
-                    await _register();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Please fill out all fields')),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C757D),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Center(child: Text('Register')),
+              OutlinedButton(
+                onPressed: () => _handleAuth(isRegister: true),
+                child: const Text('Register'),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -189,16 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: const OutlineInputBorder(),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF007BFF), width: 2),
-        ),
       ),
     );
   }

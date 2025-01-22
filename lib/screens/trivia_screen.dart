@@ -8,11 +8,13 @@ class TriviaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Light background color
+      backgroundColor: colorScheme.surfaceVariant, // Light background color
       appBar: AppBar(
         title: const Text('Trivia Questions'),
-        backgroundColor: const Color(0xFF007BFF), // Blue theme
+        backgroundColor: colorScheme.primaryContainer, // Blue theme
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -106,12 +108,12 @@ class TriviaScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      FilledButton(
                         onPressed: () {
                           // Submit answer logic
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF007BFF),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: const Text(
@@ -161,8 +163,8 @@ class HintItem extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
-            decoration: const BoxDecoration(
-              color: Color(0xFF007BFF), // Blue theme
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary, // Blue theme
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,

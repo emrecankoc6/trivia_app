@@ -7,11 +7,13 @@ class LeaderboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: colorScheme.surfaceVariant,
       appBar: AppBar(
         title: const Text('Leaderboard'),
-        backgroundColor: const Color(0xFF007BFF),
+        backgroundColor: colorScheme.primaryContainer,
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: _firestoreService.getLeaderboard(),
@@ -39,17 +41,17 @@ class LeaderboardScreen extends StatelessWidget {
                   child: ListView.builder(
                     itemCount: users.length,
                     itemBuilder: (context, index) {
-                      final user = users[index]
-                          .data(); // Use `.data()` to access the map
+                      final user = users[index].data();
                       final name = user['name'] ?? 'Anonymous';
                       final earnings = user['totalEarnings'];
 
                       return Card(
+                        color: colorScheme.surfaceVariant,
                         elevation: 2,
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: const Color(0xFF007BFF),
+                            backgroundColor: colorScheme.primary,
                             child: Text('${index + 1}'),
                           ),
                           title: Text(name),
